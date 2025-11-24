@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // For local development with SQLite, use:
+  // provider = "sqlite"
+}
+
+model Mailbox {
+  id           String    @id @default(cuid())
+  addressLocal String    // phần trước @, ví dụ "abc123"
+  addressFull  String    @unique // abc123@example.com
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  messages     Message[]
+
+  @@index([expiresAt])
+  @@index([addressLocal])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  mailbox   Mailbox  @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  mailboxId String
+  fromEmail String
+  fromName  String?
+  subject   String?
+  bodyText  String?
+  bodyHtml  String?
+  createdAt DateTime @default(now())
+
+  @@index([mailboxId, createdAt])
+}
