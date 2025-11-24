@@ -4,11 +4,8 @@ import { parseEmailAddress, extractLocalPart } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse request body (format depends on email provider)
     const body = await request.json();
 
-    // Extract email data (adjust based on your provider)
-    // This example works with Mailgun format
     const to = body.recipient || body.to || body.envelope?.to;
     const from = body.sender || body.from || body.envelope?.from;
     const subject = body.subject || body["Subject"] || "";
@@ -22,11 +19,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract local part from recipient email
     const recipientEmail = Array.isArray(to) ? to[0] : to;
     const localPart = extractLocalPart(recipientEmail);
 
-    // Find active mailbox
     const mailbox = await prisma.mailbox.findFirst({
       where: {
         addressLocal: localPart,
@@ -37,14 +32,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!mailbox) {
-      // Mailbox not found or expired, but return 200 to avoid retries
       return NextResponse.json({ message: "Mailbox not found or expired" });
     }
 
-    // Parse sender info
     const { name: fromName, email: fromEmail } = parseEmailAddress(from);
 
-    // Create message
     await prisma.message.create({
       data: {
         mailboxId: mailbox.id,
