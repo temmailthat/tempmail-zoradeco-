@@ -1,0 +1,197 @@
+═══════════════════════════════════════════════════════════
+  📋 CHECKLIST DEPLOY TEMPMAIL CHO ZORADECO.COM
+═══════════════════════════════════════════════════════════
+
+CHUẨN BỊ:
+─────────────────────────────────────────────────────────
+☐ Tài khoản GitHub (https://github.com/signup)
+☐ Tài khoản Vercel (https://vercel.com - sign up bằng GitHub)
+☐ Tài khoản Mailgun (https://signup.mailgun.com)
+☐ Quyền truy cập cPanel của zoradeco.com
+
+
+BƯỚC 1: PUSH LÊN GITHUB (5 phút)
+─────────────────────────────────────────────────────────
+☐ Tạo repo mới: https://github.com/new
+   - Tên: tempmail-zoradeco
+   - Private
+   - KHÔNG check "Add README"
+
+☐ Chạy script push:
+   .\push-to-github.ps1
+   
+   HOẶC chạy thủ công:
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/YOUR_USERNAME/tempmail-zoradeco.git
+   git push -u origin main
+
+☐ Verify code đã lên GitHub
+
+
+BƯỚC 2: SETUP DATABASE (5 phút)
+─────────────────────────────────────────────────────────
+☐ Vào: https://vercel.com/dashboard
+☐ Click "Storage" → "Create Database"
+☐ Chọn "Postgres"
+☐ Tên: tempmail-db
+☐ Region: Singapore
+☐ Click "Create"
+☐ Copy DATABASE_URL (lưu vào notepad)
+
+
+BƯỚC 3: DEPLOY VERCEL (5 phút)
+─────────────────────────────────────────────────────────
+☐ Vào: https://vercel.com/new
+☐ Import repo: tempmail-zoradeco
+☐ Build Command: prisma generate && next build
+☐ Add Environment Variables:
+   DATABASE_URL=postgresql://... (paste từ bước 2)
+   TEMPMAIL_DOMAIN=zoradeco.com
+   NEXT_PUBLIC_TEMPMAIL_DOMAIN=zoradeco.com
+   MAILBOX_TTL_MINUTES=60
+   INBOUND_WEBHOOK_SECRET=zoradeco-webhook-secret-2024-abc123xyz
+
+☐ Click "Deploy"
+☐ Đợi deploy xong (~2 phút)
+☐ Copy URL: https://tempmail-zoradeco.vercel.app
+
+
+BƯỚC 4: RUN MIGRATION (2 phút)
+─────────────────────────────────────────────────────────
+☐ Mở terminal trong thư mục project
+☐ Chạy:
+   $env:DATABASE_URL="postgresql://..." (paste connection string)
+   npx prisma migrate deploy
+
+☐ Verify: "Migration completed successfully"
+
+
+BƯỚC 5: SETUP CUSTOM DOMAIN (5 phút)
+─────────────────────────────────────────────────────────
+☐ Vercel Dashboard → Settings → Domains
+☐ Add: tempmail.zoradeco.com
+☐ Copy CNAME record:
+   Name: tempmail
+   Value: cname.vercel-dns.com
+
+☐ Login cPanel zoradeco.com
+☐ Zone Editor → Manage → Add Record
+☐ Add CNAME record (như trên)
+☐ Save
+☐ Đợi 5-10 phút
+☐ Verify domain trong Vercel: ✅ Valid Configuration
+
+
+BƯỚC 6: ĐĂNG KÝ MAILGUN (5 phút)
+─────────────────────────────────────────────────────────
+☐ Vào: https://signup.mailgun.com/new/signup
+☐ Sign up (FREE plan)
+☐ Verify email
+☐ Complete profile
+
+
+BƯỚC 7: ADD DOMAIN MAILGUN (5 phút)
+─────────────────────────────────────────────────────────
+☐ Mailgun: Sending → Domains → Add New Domain
+☐ Domain: zoradeco.com
+☐ Region: US
+☐ Click "Add Domain"
+☐ Copy tất cả DNS records (lưu vào notepad)
+
+
+BƯỚC 8: SETUP DNS CHO EMAIL (10 phút)
+─────────────────────────────────────────────────────────
+☐ Login cPanel → Zone Editor → Manage zoradeco.com
+
+☐ Add MX Records:
+   Type: MX, Priority: 10, Value: mxa.mailgun.org
+   Type: MX, Priority: 10, Value: mxb.mailgun.org
+
+☐ Add TXT Records:
+   Type: TXT, Name: @, Value: v=spf1 include:mailgun.org ~all
+   Type: TXT, Name: smtp._domainkey, Value: (copy từ Mailgun)
+
+☐ Add CNAME Record:
+   Type: CNAME, Name: email, Value: mailgun.org
+
+☐ Save tất cả records
+
+
+BƯỚC 9: VERIFY DOMAIN MAILGUN (5 phút)
+─────────────────────────────────────────────────────────
+☐ Quay lại Mailgun Dashboard
+☐ Click "Verify DNS Settings"
+☐ Đợi 5-10 phút (DNS propagation)
+☐ Refresh và click "Verify" lại
+☐ Đợi đến khi thấy: ✅ Domain verified
+
+
+BƯỚC 10: TẠO ROUTE (3 phút)
+─────────────────────────────────────────────────────────
+☐ Mailgun: Sending → Routes → Create Route
+☐ Configure:
+   Priority: 0
+   Expression Type: Match Recipient
+   Recipient: .*@zoradeco.com
+   Actions: ☑ Forward
+   URL: https://tempmail.zoradeco.com/api/webhooks/inbound-email
+
+☐ Click "Create Route"
+
+
+BƯỚC 11: TEST HỆ THỐNG (5 phút)
+─────────────────────────────────────────────────────────
+☐ Vào: https://tempmail.zoradeco.com
+☐ Click nút "Tạo"
+☐ Verify email hiển thị: abc123@zoradeco.com
+
+☐ Từ Gmail cá nhân, gửi email đến: abc123@zoradeco.com
+☐ Subject: "Test TempMail"
+☐ Body: "Hello from real email!"
+
+☐ Quay lại app
+☐ Đợi 10-20 giây
+☐ Verify email xuất hiện trong list
+☐ Click email để xem chi tiết
+☐ Verify nội dung hiển thị đúng
+
+
+═══════════════════════════════════════════════════════════
+  🎉 HOÀN THÀNH!
+═══════════════════════════════════════════════════════════
+
+✅ Website: https://tempmail.zoradeco.com
+✅ Email: *@zoradeco.com
+✅ Tự động cleanup sau 60 phút
+✅ SSL/HTTPS miễn phí
+✅ Không tốn tiền!
+
+
+TROUBLESHOOTING:
+─────────────────────────────────────────────────────────
+❌ Email không nhận được:
+   → Check Mailgun Logs
+   → Check Vercel Function Logs
+   → Verify DNS với: https://mxtoolbox.com
+
+❌ App không load:
+   → Check Vercel Deployment Logs
+   → Verify Environment Variables
+   → Check Database connection
+
+❌ Domain không hoạt động:
+   → Check DNS propagation: https://dnschecker.org
+   → Đợi 24h cho DNS propagate
+   → Verify CNAME record trong cPanel
+
+
+HỖ TRỢ:
+─────────────────────────────────────────────────────────
+📚 Docs chi tiết: DEPLOY_VERCEL_MAILGUN.md
+🚀 Quick start: BAT_DAU_DEPLOY.md
+📧 Webhook examples: WEBHOOK_EXAMPLES.md
+
+═══════════════════════════════════════════════════════════
