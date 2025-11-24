@@ -4,6 +4,7 @@ import { parseEmailAddress, extractLocalPart } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication disabled for testing - v2
     // Verify webhook secret (temporarily disabled for testing)
     // TODO: Re-enable authentication after testing
     // const webhookSecret = request.headers.get("x-webhook-token");
