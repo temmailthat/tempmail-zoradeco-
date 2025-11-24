@@ -4,19 +4,6 @@ import { parseEmailAddress, extractLocalPart } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
   try {
-    // Authentication disabled for testing - v2
-    // Verify webhook secret (temporarily disabled for testing)
-    // TODO: Re-enable authentication after testing
-    // const webhookSecret = request.headers.get("x-webhook-token");
-    // const expectedSecret = process.env.INBOUND_WEBHOOK_SECRET;
-
-    // if (!expectedSecret || webhookSecret !== expectedSecret) {
-    //   return NextResponse.json(
-    //     { error: "Unauthorized" },
-    //     { status: 401 }
-    //   );
-    // }
-
     // Parse request body (format depends on email provider)
     const body = await request.json();
 
